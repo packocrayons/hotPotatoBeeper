@@ -1,4 +1,4 @@
-#define BEEPER_PIN 1
+#define BEEPER_PIN 3
 #define BUTTON_PIN 2
 
 typedef enum controllerState {NOT_STARTED, STARTING, RUNNING, BEEPING, STOPPED} controllerState;
@@ -7,18 +7,19 @@ controllerState state = NOT_STARTED;
 
 
 
-byte toggler = 2; //basic, multi-use toggler for the ISR
+byte toggler = 1; //basic, multi-use toggler for the ISR
 SIGNAL(TIMER1_COMPA_vect){ //the main reason for using an ISR is so I can call delays and not have to worry (working hard so I can be lazy - yknow)
   if (state == STARTING){
-    digitalWrite(BEEPER_PIN, toggler - 1);
-    toggler = ~toggler & 0x1; //just the first bit - I don't know if arduino writes to the entire port register but don't break things
+    digitalWrite(BEEPER_PIN, HIGH);
   }
   if (state == BEEPING) {
-    digitalWrite(BEEPER_PIN, HIGH);
+    digitalWrite(BEEPER_PIN, toggler - 1);
+    toggler = ~toggler;
   }
   if (state == RUNNING || state == NOT_STARTED || state == STOPPED){
     digitalWrite(BEEPER_PIN, LOW);
   }
+//  Serial.println("Interrupted");
 }
 
 
@@ -37,6 +38,7 @@ void setup() {
   
   pinMode(BEEPER_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT);
+  Serial.begin(9600);
   
 }
 
@@ -44,12 +46,15 @@ void loop() {
   if (digitalRead(BUTTON_PIN)){ //really, really basic state machine
     delay(100);
     state = STARTING;
+    Serial.println("state changed");
     delay(100);
     state = RUNNING;
-    unsigned long delaytime = random(60000, 120000); //60-120 seconds, approximately
+    Serial.println("going to sleep");
+    unsigned long delaytime = random(120000, 180000); //60-120 seconds, approximately
     delay(delaytime);
     state = BEEPING;
-    delay(500);
+    Serial.println("beeping");
+    delay(2000);
     state = STOPPED;
   }
 }
